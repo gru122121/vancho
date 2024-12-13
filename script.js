@@ -34,12 +34,11 @@ function formatNumber(num) {
     return num.toString().replace(/\B(?=(\d{3})+(?!\d))/g, ",");
 }
 
-// Function to extract Steam data and notes from HTML string
+// Function to extract Steam data from HTML string
 function extractSteamData(html) {
     const parser = new DOMParser();
     const doc = parser.parseFromString(html, 'text/html');
     
-    // Extract stats from the trading showcase
     let stats = {
         itemsOwned: '...',
         tradesMade: '...',
@@ -47,15 +46,10 @@ function extractSteamData(html) {
     };
 
     try {
-        // Find all showcase boxes
-        const showcases = doc.querySelectorAll('.profile_customization');
-        
-        // Find the trading showcase
-        const tradingShowcase = Array.from(showcases).find(showcase => 
-            showcase.querySelector('.profile_customization_header')?.textContent.includes('Trading'));
-        
-        if (tradingShowcase) {
-            const statValues = tradingShowcase.querySelectorAll('.value');
+        // Find the showcase stats row
+        const statsRow = doc.querySelector('.showcase_stats_trading');
+        if (statsRow) {
+            const statValues = statsRow.querySelectorAll('.showcase_stat .value');
             if (statValues.length >= 3) {
                 stats = {
                     itemsOwned: statValues[0].textContent.trim(),
@@ -106,22 +100,14 @@ function updateDisplay(steamData, csgoRepData) {
 // Function to fetch Steam profile data
 async function fetchSteamData() {
     try {
-        const corsProxy = 'https://corsproxy.io/';
-        const steamUrl = 'https://steamcommunity.com/profiles/76561198116040991';
+        const corsProxy = 'https://corsproxy.io/?';
+        const steamUrl = 'https://steamcommunity.com/id/vancho666/';
         
-        const response = await fetch(corsProxy + steamUrl);
+        const response = await fetch(corsProxy + encodeURIComponent(steamUrl));
         if (!response.ok) throw new Error('Failed to fetch Steam data');
 
         const html = await response.text();
-        const data = extractSteamData(html);
-        
-        // Cache the Steam data
-        localStorage.setItem('steamData', JSON.stringify({
-            data,
-            timestamp: Date.now()
-        }));
-
-        return data;
+        return extractSteamData(html);
     } catch (error) {
         console.error('Error fetching Steam data:', error);
         
